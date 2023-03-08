@@ -1,23 +1,35 @@
+# subject to documentation assuming apiVersion cahnges
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: myapp-argo-application
   namespace: argocd
 spec:
+  # Group multiple apps into project or leave it as default
   project: default
-
+  # Git Repo of GitOPs
   source:
-    repoURL: https://gitlab.com/nanuchi/argocd-app-config.git
+    repoURL: https://github.com/Abhi94N/argocd.git
+    # Latest commit which is head
     targetRevision: HEAD
-    path: dev
-  destination: 
+    # sync or track a specific path in that repository
+    path: dev 
+  # address of the kubernetes cluster itself and point it to the service for the kubernetes api server
+  destination:
     server: https://kubernetes.default.svc
-    namespace: myapp
+    # set to a different namespace
+    namespace: myapp  
 
+  # Create the namespace
   syncPolicy:
     syncOptions:
     - CreateNamespace=true
 
     automated:
+      #manual changes made to live cluster will be overwritten to match to source of truth only if this is enabled to true
       selfHeal: true
+      # delete the manual change component or old component
       prune: true
+      # argoCD poos Git repository every 3 minutes
+      # Can also configure a git webhook to trigger at a certain time
+      
