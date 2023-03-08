@@ -13,7 +13,7 @@ spec:
     # Latest commit which is head
     targetRevision: HEAD
     # sync or track a specific path in that repository
-    path: dev 
+    path: demo/dev 
   # address of the kubernetes cluster itself and point it to the service for the kubernetes api server
   destination:
     server: https://kubernetes.default.svc
@@ -32,4 +32,4 @@ spec:
       prune: true
       # argoCD poos Git repository every 3 minutes
       # Can also configure a git webhook to trigger at a certain time
-      
+
