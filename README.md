@@ -108,3 +108,4 @@
     2.  Configure ArgoCD with "Application" CRD
     3.  Test our setup by updating Deployment.yaml
 9.  Enable automatic sync, self-healing, and autmoatic pruning are disabled by default and need to be updated to `application.yaml`
+    1.  must apply application.yaml for argocd to recognize source of truth gitOps repo
