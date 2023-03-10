@@ -37,7 +37,7 @@
       1. k8s yaml files
       2. helm charts
       3. kustomize
-   7. Git repository that is tracked and sy
+   7. Git repository that is tracked and sync
    8. Seperates CI to developers/DevOps and CD to operations/DevOps
       1. CI pipeline(developers/DevOps) - configured by Jenkins or Github Actions
          1. Test
@@ -109,3 +109,55 @@
     3.  Test our setup by updating Deployment.yaml
 9.  Enable automatic sync, self-healing, and autmoatic pruning are disabled by default and need to be updated to `application.yaml`
     1.  must apply application.yaml for argocd to recognize source of truth gitOps repo
+10. App of Apps
+    1.  an helm chart for example consisting of multiple of applications
+11. Avoid Risks of secret injection plugins by
+    1.   updating network policies to prevent direct access to argo cd components
+    2.   enable apssword auth on redis instance that stores secrets
+    3.   consider running argocd on its own cluster
+12.  [Rolling Updates](https://argoproj.github.io/argo-rollouts/)
+     1. Types
+        1. BlueGreen Rollout - keeps active service reciving production traffic while the the rollout configures the preview service to send traffic to the new version
+        2. Canary Rollout - rollout and scaleup the new version to recieve a certain percentage of traffic, wait for a specific amount of time and set the percentage back to 0, then wait to rollout the service completely
+     2. Must satisfy user before rollout is promoted
+        1. should include service and ingress to expose and test preview service
+        2. rollout is deployed if app has matches rollout deployment
+        3. use kubect rollout create dashboard to promote application
+### EKS Blueprints
+
+1. speciify blueprint that configures eks cluster 
+2. pipeline - fork blueprints and update [username](https://github.com/aws-samples/cdk-eks-blueprints-patterns/blob/fb0c28540af9c317839d960a341e8dba2aa39e74/lib/pipeline-multi-env-gitops/index.ts#L136) 
+3. deploying blueprints across multiple cluster environments require you to provide [stages](https://github.com/aws-samples/cdk-eks-blueprints-patterns/blob/fb0c28540af9c317839d960a341e8dba2aa39e74/lib/pipeline-multi-env-gitops/index.ts#L147)
+4. Application Team managed by ApplicationTeam blue print that allows you to define teams and link it to [arn principal](https://github.com/aws-samples/cdk-eks-blueprints-patterns/tree/main/lib/teams/pipeline-multi-env-gitops)
+   1. creates the namespace for applications of the configured team
+   2. creating the IAM role that is automatically configured aws-auth configmap
+   3. optionally apply any kubernetes anifest for the team
+   4. set namespace quotas limit
+5. Configuring GitOps with [ArgoCD](https://github.com/aws-samples/cdk-eks-blueprints-patterns/blob/fb0c28540af9c317839d960a341e8dba2aa39e74/lib/pipeline-multi-env-gitops/index.ts#L129)
+   1. Argo ApppProject per application
+      1. `sourcRepo` specify the source code for helm, k8s manifests or kustomize
+      2. `destinations` - specify the kubernetes cluster and namespace
+   2. ArgoCD add ons
+      1. [apps on apps configuration](https://github.com/aws-samples/cdk-eks-blueprints-patterns/blob/fb0c28540af9c317839d960a341e8dba2aa39e74/lib/pipeline-multi-env-gitops/index.ts#L241)
+         1. application configuration that specify the path of helm chart that consists of child applications
+      2. bootstrap values - to specify ingress and additonal add ons for apps on apps configuration
+      3. values - specifies deployment for specific repositories to speicifc namespaces
+
+### ARGOCD Arch
+1.  API Server - exposes api consumed by web ui, cli and ci/cd
+    1.  rbac enforcement
+    2.  listener/forwarder for git webhook events
+    3.  repository and cluster credential management(k8s secrets)
+    4.  authentication and auth delegation to external identity providers
+    5.  invoke app ops(sync, rollback, user-definition actions)
+    6.  app management and status reporting
+2.  Repository server - maintains local cache of git repo holding application maniests for generating and returning k8s manifests. needs following inputs
+    1.  Repository URL
+    2.  revision(commit,tag, branch)
+    3.  application path
+    4.  template specific settings: parameters, helm values.yaml
+3.  Application controller
+    1.  monitors running app and compares live state to desired target state
+    2.  takes corrective action if app state is outofSync if enabled
+    3.  Responsible for user-defined, preSync, Sync, and Postsync hooks
+4.      
